@@ -44,8 +44,8 @@ def render_tabel(papan, is_jawaban=False):
         tabel_html += "<tr>"
         for c in range(9):
             val = papan[r][c] if papan[r][c] != 0 else ""
-            style = "border: 1px solid black; width: 30px; height: 30px; text-align: center; font-size: 18px; color: black;"
-            if val != "" and not is_jawaban: style += "background-color: #f0f0f0; font-weight: bold;"
+            style = "border: 1px solid black; width: 28px; height: 28px; text-align: center; font-size: 16px; color: black; padding: 0;"
+            if val != "" and not is_jawaban: style += "background-color: #f2f2f2; font-weight: bold;"
             if (c + 1) % 3 == 0 and c != 8: style += "border-right: 2.5px solid black;"
             if (r + 1) % 3 == 0 and r != 8: style += "border-bottom: 2.5px solid black;"
             tabel_html += f"<td style='{style}'>{val}</td>"
@@ -54,50 +54,53 @@ def render_tabel(papan, is_jawaban=False):
     return tabel_html
 
 # --- UI STREAMLIT ---
-st.set_page_config(page_title="Pabrik Sudoku", page_icon="🧩")
+st.set_page_config(page_title="Sudoku Sherlock", layout="centered")
 
+# CSS untuk menghilangkan elemen Streamlit saat di-print
 st.markdown("""
     <style>
     @media print {
-        header, .stSidebar, button { display: none !important; }
-        .main { background: white !important; }
+        header, .stSidebar, button, [data-testid="stToolbar"] { display: none !important; }
+        .main { background: white !important; padding: 0 !important; }
         .page-break { page-break-before: always; }
+        h2 { font-size: 18px !important; margin: 10px 0 !important; }
+        h4 { font-size: 14px !important; margin: 5px 0 !important; }
     }
     </style>
-    """, unsafe_allow_whitespace=True)
+    """, unsafe_allow_html=True)
 
-st.title("🧩 Pabrik Sudoku Pribadi")
+st.title("🧩 Sudoku Sherlock")
 
 with st.sidebar:
     st.header("⚙️ Pengaturan")
     level = st.selectbox("Pilih Level:", ["Mudah", "Normal", "Sulit", "Sangat Sulit"])
-    jumlah = st.slider("Jumlah Puzzle:", 2, 10, 6, 2)
-    if st.button("🔄 Generate Puzzle Baru"):
-        st.session_state.data = []
-        for _ in range(jumlah):
-            p_dasar = [[0 for _ in range(9)] for _ in range(9)]
-            selesaikan(p_dasar)
-            jawaban = [b[:] for b in p_dasar]
-            soal = buat_soal(jawaban, level)
-            st.session_state.data.append({'soal': soal, 'jawaban': jawaban})
+    jumlah = st.slider("Jumlah Puzzle:", 2, 6, 6)
+    generate = st.button("🔄 Buat Puzzle Baru")
+
+if 'data' not in st.session_state or generate:
+    st.session_state.data = []
+    for _ in range(jumlah):
+        p_dasar = [[0 for _ in range(9)] for _ in range(9)]
+        selesaikan(p_dasar)
+        jawaban = [b[:] for b in p_dasar]
+        soal = buat_soal(jawaban, level)
+        st.session_state.data.append({'soal': soal, 'jawaban': jawaban})
 
 if 'data' in st.session_state:
-    st.button("🖨️ Cetak ke PDF / Printer", on_click=lambda: st.write('<script>window.print()</script>', unsafe_allow_html=True))
+    st.button("🖨️ CETAK SEKARANG")
     
-    # Grid Soal
-    st.subheader(f"Halaman Soal - Level {level}")
+    # Halaman Soal
+    st.markdown(f"<h2 style='text-align:center;'>HALAMAN SOAL - {level.upper()}</h2>", unsafe_allow_html=True)
     cols = st.columns(2)
     for i, d in enumerate(st.session_state.data):
         with cols[i % 2]:
             st.markdown(f"<div style='text-align:center;'><h4>Puzzle #{i+1}</h4>{render_tabel(d['soal'])}</div>", unsafe_allow_html=True)
-            st.write("")
-
+    
     st.markdown("<div class='page-break'></div>", unsafe_allow_html=True)
     
-    # Grid Jawaban
-    st.subheader("Kunci Jawaban")
+    # Halaman Jawaban
+    st.markdown("<h2 style='text-align:center;'>KUNCI JAWABAN</h2>", unsafe_allow_html=True)
     cols_j = st.columns(2)
     for i, d in enumerate(st.session_state.data):
         with cols_j[i % 2]:
             st.markdown(f"<div style='text-align:center;'><h4>Jawaban #{i+1}</h4>{render_tabel(d['jawaban'], True)}</div>", unsafe_allow_html=True)
-            st.write("")
