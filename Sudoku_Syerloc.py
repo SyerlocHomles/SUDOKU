@@ -1,16 +1,15 @@
 import streamlit as st
 import random
+import base64
 
-# --- LOGIKA SUDOKU ---
+# --- LOGIKA SUDOKU (Tetap Sama) ---
 def apakah_sah(papan, baris, kolom, angka):
     for i in range(9):
-        if papan[baris][i] == angka or papan[i][kolom] == angka:
-            return False
+        if papan[baris][i] == angka or papan[i][kolom] == angka: return False
     awal_b, awal_k = (baris // 3) * 3, (kolom // 3) * 3
     for i in range(3):
         for j in range(3):
-            if papan[awal_b + i][awal_k + j] == angka:
-                return False
+            if papan[awal_b + i][awal_k + j] == angka: return False
     return True
 
 def selesaikan(papan):
@@ -38,48 +37,23 @@ def buat_soal(papan_penuh, level):
             count += 1
     return soal
 
-def render_tabel(papan, is_jawaban=False):
-    tabel_html = "<table style='border: 2px solid black; border-collapse: collapse; margin: 0 auto; background: white;'>"
+def render_tabel_html(papan, is_jawaban=False):
+    tabel_html = "<table style='border: 2px solid black; border-collapse: collapse; margin: 10px auto; background: white;'>"
     for r in range(9):
         tabel_html += "<tr>"
         for c in range(9):
             val = papan[r][c] if papan[r][c] != 0 else ""
-            style = "border: 1px solid black; width: 26px; height: 26px; text-align: center; font-size: 15px; color: black; padding: 0;"
+            style = "border: 1px solid black; width: 30px; height: 30px; text-align: center; font-size: 18px; font-family: Arial; color: black;"
             if val != "" and not is_jawaban: style += "background-color: #f2f2f2; font-weight: bold;"
-            if (c + 1) % 3 == 0 and c != 8: style += "border-right: 2.5px solid black;"
-            if (r + 1) % 3 == 0 and r != 8: style += "border-bottom: 2.5px solid black;"
+            if (c + 1) % 3 == 0 and c != 8: style += "border-right: 3px solid black;"
+            if (r + 1) % 3 == 0 and r != 8: style += "border-bottom: 3px solid black;"
             tabel_html += f"<td style='{style}'>{val}</td>"
         tabel_html += "</tr>"
     tabel_html += "</table>"
     return tabel_html
 
 # --- UI STREAMLIT ---
-st.set_page_config(page_title="Sudoku Sherlock", layout="wide")
-
-# CSS UNTUK PRINTING (Sangat Penting)
-st.markdown("""
-    <style>
-    /* Sembunyikan semua elemen Streamlit saat print */
-    @media print {
-        div[data-testid="stSidebar"], 
-        div[data-testid="stHeader"], 
-        .stButton, 
-        footer,
-        div[data-testid="stToolbar"] {
-            display: none !important;
-        }
-        .main .block-container {
-            padding: 0 !important;
-            margin: 0 !important;
-        }
-        .page-break {
-            page-break-before: always;
-            clear: both;
-        }
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
+st.set_page_config(page_title="Sudoku Sherlock", layout="centered")
 st.title("🧩 Sudoku Sherlock")
 
 with st.sidebar:
@@ -88,7 +62,6 @@ with st.sidebar:
     jumlah = st.slider("Jumlah Puzzle:", 2, 6, 6)
     generate = st.button("🔄 Buat Puzzle Baru")
 
-# Inisialisasi Data
 if 'data' not in st.session_state or generate:
     st.session_state.data = []
     for _ in range(jumlah):
@@ -98,26 +71,42 @@ if 'data' not in st.session_state or generate:
         soal = buat_soal(jawaban, level)
         st.session_state.data.append({'soal': soal, 'jawaban': jawaban})
 
-# TOMBOL CETAK MANUAL
-# Ini memicu print browser secara global
-st.markdown('<button onclick="window.print()" style="padding: 10px 20px; background-color: #27ae60; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%;">🖨️ KLIK DI SINI UNTUK CETAK KE KERTAS / PDF</button>', unsafe_allow_html=True)
+# --- PROSES MEMBUAT HALAMAN CETAK KHUSUS ---
+html_cetak = f"""
+<html>
+<head>
+    <title>Cetak Sudoku</title>
+    <style>
+        body {{ font-family: Arial; text-align: center; }}
+        .grid {{ display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }}
+        .page-break {{ page-break-before: always; }}
+        @media print {{ .no-print {{ display: none; }} }}
+    </style>
+</head>
+<body onload="window.print()">
+    <button class="no-print" onclick="window.print()" style="padding:15px; margin:20px; background:#27ae60; color:white; border:none; border-radius:5px;">KLIK CETAK / SIMPAN PDF</button>
+    <h2>HALAMAN SOAL - {level.upper()}</h2>
+    <div class="grid">
+"""
+for i, d in enumerate(st.session_state.data):
+    html_cetak += f"<div><h4>Puzzle #{i+1}</h4>{render_tabel_html(d['soal'])}</div>"
 
+html_cetak += "</div><div class='page-break'></div><h2>KUNCI JAWABAN</h2><div class='grid'>"
+for i, d in enumerate(st.session_state.data):
+    html_cetak += f"<div><h4>Jawaban #{i+1}</h4>{render_tabel_html(d['jawaban'], True)}</div>"
+html_cetak += "</div></body></html>"
+
+# Tombol untuk membuka halaman cetak di TAB BARU
+b64 = base64.b64encode(html_cetak.encode()).decode()
+href = f'<a href="data:text/html;base64,{b64}" target="_blank" style="text-decoration: none;"><button style="width:100%; padding:15px; background-color:#e67e22; color:white; border:none; border-radius:10px; font-weight:bold; cursor:pointer;">🚀 BUKA HALAMAN SIAP CETAK (TAB BARU)</button></a>'
+
+st.markdown(href, unsafe_allow_html=True)
+st.info("Setelah klik tombol oranye di atas, tab baru akan terbuka. Tekan Ctrl+P (Laptop) atau gunakan menu Share > Print (HP) di tab baru tersebut.")
+
+# Tampilan Preview di Website
 st.write("---")
-
-# TAMPILAN SOAL
-st.markdown(f"<h2 style='text-align:center;'>HALAMAN SOAL - {level.upper()}</h2>", unsafe_allow_html=True)
+st.subheader("Preview Papan:")
 cols = st.columns(2)
 for i, d in enumerate(st.session_state.data):
     with cols[i % 2]:
-        st.markdown(f"<div style='text-align:center; margin-bottom: 20px;'><h4>Puzzle #{i+1}</h4>{render_tabel(d['soal'])}</div>", unsafe_allow_html=True)
-
-# Garis Pemisah untuk Kertas Baru
-st.markdown("<div class='page-break'></div>", unsafe_allow_html=True)
-st.write("---")
-
-# TAMPILAN JAWABAN
-st.markdown("<h2 style='text-align:center;'>KUNCI JAWABAN</h2>", unsafe_allow_html=True)
-cols_j = st.columns(2)
-for i, d in enumerate(st.session_state.data):
-    with cols_j[i % 2]:
-        st.markdown(f"<div style='text-align:center; margin-bottom: 20px;'><h4>Jawaban #{i+1}</h4>{render_tabel(d['jawaban'], True)}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='text-align:center;'>{render_tabel_html(d['soal'])}</div>", unsafe_allow_html=True)
