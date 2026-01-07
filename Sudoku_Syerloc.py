@@ -44,7 +44,7 @@ def render_tabel(papan, is_jawaban=False):
         tabel_html += "<tr>"
         for c in range(9):
             val = papan[r][c] if papan[r][c] != 0 else ""
-            style = "border: 1px solid black; width: 28px; height: 28px; text-align: center; font-size: 16px; color: black; padding: 0;"
+            style = "border: 1px solid black; width: 26px; height: 26px; text-align: center; font-size: 15px; color: black; padding: 0;"
             if val != "" and not is_jawaban: style += "background-color: #f2f2f2; font-weight: bold;"
             if (c + 1) % 3 == 0 and c != 8: style += "border-right: 2.5px solid black;"
             if (r + 1) % 3 == 0 and r != 8: style += "border-bottom: 2.5px solid black;"
@@ -54,17 +54,28 @@ def render_tabel(papan, is_jawaban=False):
     return tabel_html
 
 # --- UI STREAMLIT ---
-st.set_page_config(page_title="Sudoku Sherlock", layout="centered")
+st.set_page_config(page_title="Sudoku Sherlock", layout="wide")
 
-# CSS untuk menghilangkan elemen Streamlit saat di-print
+# CSS UNTUK PRINTING (Sangat Penting)
 st.markdown("""
     <style>
+    /* Sembunyikan semua elemen Streamlit saat print */
     @media print {
-        header, .stSidebar, button, [data-testid="stToolbar"] { display: none !important; }
-        .main { background: white !important; padding: 0 !important; }
-        .page-break { page-break-before: always; }
-        h2 { font-size: 18px !important; margin: 10px 0 !important; }
-        h4 { font-size: 14px !important; margin: 5px 0 !important; }
+        div[data-testid="stSidebar"], 
+        div[data-testid="stHeader"], 
+        .stButton, 
+        footer,
+        div[data-testid="stToolbar"] {
+            display: none !important;
+        }
+        .main .block-container {
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        .page-break {
+            page-break-before: always;
+            clear: both;
+        }
     }
     </style>
     """, unsafe_allow_html=True)
@@ -77,6 +88,7 @@ with st.sidebar:
     jumlah = st.slider("Jumlah Puzzle:", 2, 6, 6)
     generate = st.button("🔄 Buat Puzzle Baru")
 
+# Inisialisasi Data
 if 'data' not in st.session_state or generate:
     st.session_state.data = []
     for _ in range(jumlah):
@@ -86,21 +98,26 @@ if 'data' not in st.session_state or generate:
         soal = buat_soal(jawaban, level)
         st.session_state.data.append({'soal': soal, 'jawaban': jawaban})
 
-if 'data' in st.session_state:
-    st.button("🖨️ CETAK SEKARANG")
-    
-    # Halaman Soal
-    st.markdown(f"<h2 style='text-align:center;'>HALAMAN SOAL - {level.upper()}</h2>", unsafe_allow_html=True)
-    cols = st.columns(2)
-    for i, d in enumerate(st.session_state.data):
-        with cols[i % 2]:
-            st.markdown(f"<div style='text-align:center;'><h4>Puzzle #{i+1}</h4>{render_tabel(d['soal'])}</div>", unsafe_allow_html=True)
-    
-    st.markdown("<div class='page-break'></div>", unsafe_allow_html=True)
-    
-    # Halaman Jawaban
-    st.markdown("<h2 style='text-align:center;'>KUNCI JAWABAN</h2>", unsafe_allow_html=True)
-    cols_j = st.columns(2)
-    for i, d in enumerate(st.session_state.data):
-        with cols_j[i % 2]:
-            st.markdown(f"<div style='text-align:center;'><h4>Jawaban #{i+1}</h4>{render_tabel(d['jawaban'], True)}</div>", unsafe_allow_html=True)
+# TOMBOL CETAK MANUAL
+# Ini memicu print browser secara global
+st.markdown('<button onclick="window.print()" style="padding: 10px 20px; background-color: #27ae60; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%;">🖨️ KLIK DI SINI UNTUK CETAK KE KERTAS / PDF</button>', unsafe_allow_html=True)
+
+st.write("---")
+
+# TAMPILAN SOAL
+st.markdown(f"<h2 style='text-align:center;'>HALAMAN SOAL - {level.upper()}</h2>", unsafe_allow_html=True)
+cols = st.columns(2)
+for i, d in enumerate(st.session_state.data):
+    with cols[i % 2]:
+        st.markdown(f"<div style='text-align:center; margin-bottom: 20px;'><h4>Puzzle #{i+1}</h4>{render_tabel(d['soal'])}</div>", unsafe_allow_html=True)
+
+# Garis Pemisah untuk Kertas Baru
+st.markdown("<div class='page-break'></div>", unsafe_allow_html=True)
+st.write("---")
+
+# TAMPILAN JAWABAN
+st.markdown("<h2 style='text-align:center;'>KUNCI JAWABAN</h2>", unsafe_allow_html=True)
+cols_j = st.columns(2)
+for i, d in enumerate(st.session_state.data):
+    with cols_j[i % 2]:
+        st.markdown(f"<div style='text-align:center; margin-bottom: 20px;'><h4>Jawaban #{i+1}</h4>{render_tabel(d['jawaban'], True)}</div>", unsafe_allow_html=True)
