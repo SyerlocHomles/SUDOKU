@@ -38,15 +38,15 @@ def buat_soal(papan_penuh, level):
     return soal
 
 def render_tabel_html(papan, is_jawaban=False):
-    tabel_html = "<table style='border: 2px solid black; border-collapse: collapse; margin: 10px auto; background: white;'>"
+    tabel_html = "<table style='border: 2px solid black; border-collapse: collapse; margin: 5px auto; background: white;'>"
     for r in range(9):
         tabel_html += "<tr>"
         for c in range(9):
             val = papan[r][c] if papan[r][c] != 0 else ""
-            style = "border: 1px solid black; width: 30px; height: 30px; text-align: center; font-size: 18px; font-family: Arial; color: black;"
+            style = "border: 1px solid black; width: 26px; height: 26px; text-align: center; font-size: 15px; font-family: Arial; color: black; padding: 0;"
             if val != "" and not is_jawaban: style += "background-color: #f2f2f2; font-weight: bold;"
-            if (c + 1) % 3 == 0 and c != 8: style += "border-right: 3px solid black;"
-            if (r + 1) % 3 == 0 and r != 8: style += "border-bottom: 3px solid black;"
+            if (c + 1) % 3 == 0 and c != 8: style += "border-right: 2.5px solid black;"
+            if (r + 1) % 3 == 0 and r != 8: style += "border-bottom: 2.5px solid black;"
             tabel_html += f"<td style='{style}'>{val}</td>"
         tabel_html += "</tr>"
     tabel_html += "</table>"
@@ -75,16 +75,18 @@ if 'data' not in st.session_state or generate:
 html_cetak = f"""
 <html>
 <head>
-    <title>Cetak Sudoku</title>
     <style>
-        body {{ font-family: Arial; text-align: center; }}
-        .grid {{ display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }}
+        @page {{ size: A4; margin: 0.5cm; }}
+        body {{ font-family: Arial; text-align: center; margin: 0; padding: 0; }}
+        .grid {{ display: grid; grid-template-columns: repeat(2, 1fr); gap: 0px; }}
         .page-break {{ page-break-before: always; }}
+        h2 {{ margin: 5px 0; font-size: 16px; }}
+        h4 {{ margin: 2px 0; font-size: 12px; }}
         @media print {{ .no-print {{ display: none; }} }}
     </style>
 </head>
 <body onload="window.print()">
-    <button class="no-print" onclick="window.print()" style="padding:15px; margin:20px; background:#27ae60; color:white; border:none; border-radius:5px;">KLIK CETAK / SIMPAN PDF</button>
+    <button class="no-print" onclick="window.print()" style="padding:10px; background:#27ae60; color:white; border:none; border-radius:5px;">CETAK SEKARANG</button>
     <h2>HALAMAN SOAL - {level.upper()}</h2>
     <div class="grid">
 """
