@@ -2,7 +2,7 @@ import streamlit as st
 import random
 import base64
 
-# --- LOGIKA SUDOKU (Tetap Sama) ---
+# --- LOGIKA SUDOKU ---
 def apakah_sah(papan, baris, kolom, angka):
     for i in range(9):
         if papan[baris][i] == angka or papan[i][kolom] == angka: return False
@@ -69,46 +69,46 @@ if 'data' not in st.session_state or generate:
         selesaikan(p_dasar)
         jawaban = [b[:] for b in p_dasar]
         soal = buat_soal(jawaban, level)
-        st.session_state.data.append({'soal': soal, 'jawaban': jawaban})
+        # Membuat ID Unik untuk setiap papan
+        puzzle_id = f"SS-{random.randint(1000, 9999)}"
+        st.session_state.data.append({'soal': soal, 'jawaban': jawaban, 'id': puzzle_id})
 
-# --- PROSES MEMBUAT HALAMAN CETAK KHUSUS ---
+# --- PROSES HALAMAN CETAK ---
 html_cetak = f"""
 <html>
 <head>
     <style>
         @page {{ size: A4; margin: 0.5cm; }}
         body {{ font-family: Arial; text-align: center; margin: 0; padding: 0; }}
-        .grid {{ display: grid; grid-template-columns: repeat(2, 1fr); gap: 0px; }}
+        .grid {{ display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }}
         .page-break {{ page-break-before: always; }}
-        h2 {{ margin: 5px 0; font-size: 16px; }}
-        h4 {{ margin: 2px 0; font-size: 12px; }}
+        h2 {{ margin: 10px 0; font-size: 18px; color: #2c3e50; }}
+        .id-label {{ font-size: 10px; color: #7f8c8d; margin-bottom: 2px; }}
         @media print {{ .no-print {{ display: none; }} }}
     </style>
 </head>
 <body onload="window.print()">
-    <button class="no-print" onclick="window.print()" style="padding:10px; background:#27ae60; color:white; border:none; border-radius:5px;">CETAK SEKARANG</button>
+    <button class="no-print" onclick="window.print()" style="padding:10px; margin:20px; background:#27ae60; color:white; border:none; border-radius:5px; cursor:pointer;">CETAK SEKARANG</button>
     <h2>HALAMAN SOAL - {level.upper()}</h2>
     <div class="grid">
 """
-for i, d in enumerate(st.session_state.data):
-    html_cetak += f"<div><h4>Puzzle #{i+1}</h4>{render_tabel_html(d['soal'])}</div>"
+for d in st.session_state.data:
+    html_cetak += f"<div><div class='id-label'>ID: {d['id']}</div>{render_tabel_html(d['soal'])}</div>"
 
 html_cetak += "</div><div class='page-break'></div><h2>KUNCI JAWABAN</h2><div class='grid'>"
-for i, d in enumerate(st.session_state.data):
-    html_cetak += f"<div><h4>Jawaban #{i+1}</h4>{render_tabel_html(d['jawaban'], True)}</div>"
+for d in st.session_state.data:
+    html_cetak += f"<div><div class='id-label'>Jawaban ID: {d['id']}</div>{render_tabel_html(d['jawaban'], True)}</div>"
 html_cetak += "</div></body></html>"
 
-# Tombol untuk membuka halaman cetak di TAB BARU
 b64 = base64.b64encode(html_cetak.encode()).decode()
-href = f'<a href="data:text/html;base64,{b64}" target="_blank" style="text-decoration: none;"><button style="width:100%; padding:15px; background-color:#e67e22; color:white; border:none; border-radius:10px; font-weight:bold; cursor:pointer;">🚀 BUKA HALAMAN SIAP CETAK (TAB BARU)</button></a>'
+href = f'<a href="data:text/html;base64,{b64}" target="_blank" style="text-decoration: none;"><button style="width:100%; padding:15px; background-color:#e67e22; color:white; border:none; border-radius:10px; font-weight:bold; cursor:pointer;">🚀 BUKA HALAMAN SIAP CETAK</button></a>'
 
 st.markdown(href, unsafe_allow_html=True)
-st.info("Setelah klik tombol oranye di atas, tab baru akan terbuka. Tekan Ctrl+P (Laptop) atau gunakan menu Share > Print (HP) di tab baru tersebut.")
 
-# Tampilan Preview di Website
+# Preview di Web
 st.write("---")
-st.subheader("Preview Papan:")
 cols = st.columns(2)
 for i, d in enumerate(st.session_state.data):
     with cols[i % 2]:
-        st.markdown(f"<div style='text-align:center;'>{render_tabel_html(d['soal'])}</div>", unsafe_allow_html=True)
+        st.caption(f"ID: {d['id']}")
+        st.markdown(render_tabel_html(d['soal']), unsafe_allow_html=True)
